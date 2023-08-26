@@ -17,4 +17,9 @@ public class Memo {
         this.username = requsetDTO.getUsername();
         this.contents = requsetDTO.getContents();
     }
+
+    public void update(MemoRequsetDTO requsetDTO) {
+        this.username = requsetDTO.getUsername();
+        this.contents = requsetDTO.getContents();
+    }
 }
