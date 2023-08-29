@@ -3,58 +3,61 @@ package com.sparta.memo.ConTroller;
 import com.sparta.memo.DTO.MemoRequsetDTO;
 import com.sparta.memo.DTO.MemoResponseDTO;
 import com.sparta.memo.entity.Memo;
+import com.sparta.memo.service.MemoService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
 public class MemoController {
 
-    private final Map<Long, Memo> memoList = new HashMap<>();
+    private final JdbcTemplate jdbcTemplate;
+
+    public MemoController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @PostMapping("/memos")
-    public MemoResponseDTO createMemo(@RequestBody MemoRequsetDTO requsetDTO) {
+    public MemoResponseDTO createMemo(@RequestBody MemoRequsetDTO requestDto) {
+        MemoService memoService = new MemoService(jdbcTemplate);
 
-        Memo memo = new Memo(requsetDTO);
-
-        Long maxId = memoList.size() > 0 ? Collections.max(memoList.keySet()) + 1 : 1;
-        memo.setId(maxId);
-
-        memoList.put(memo.getId(), memo);
-
-        MemoResponseDTO memoResponseDTO = new MemoResponseDTO(memo);
-        return memoResponseDTO;
+        return memoService.createMemo(requestDto);
     }
 
     @GetMapping("/memos")
     public List<MemoResponseDTO> getMemos() {
-        List<MemoResponseDTO> responseDTOSList = memoList.values().stream()
-                .map(MemoResponseDTO::new).toList();
-
-        return responseDTOSList;
+        MemoService memoService = new MemoService(jdbcTemplate);
+        return memoService.getMemos();
     }
 
     @PutMapping("/memos/{id}")
-    public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequsetDTO requsetDTO) {
-        if (memoList.containsKey(id)) {
-            Memo memo = memoList.get(id);
-
-            memo.update(requsetDTO);
-
-            return memo.getId();
-        } else {
-            throw new IllegalArgumentException("선택한 메모가 없어요");
-        }
+    public Long updateMemo(@PathVariable Long id, @RequestBody MemoRequsetDTO requestDto) {
+        MemoService memoService = new MemoService(jdbcTemplate);
+        return memoService.updateMemo(id, requestDto);
     }
 
-    @DeleteMapping("/memos/{id}")
-    public Long deleteMemo(@PathVariable Long id) {
-        if (memoList.containsKey(id)) {
-            memoList.remove(id);
-            return id;
-        } else {
-            throw new IllegalArgumentException("선택한 메모가 없어요");
-        }
+    @DeleteMapping("/memos/{id}/{password}")
+    public Long deleteMemo(@PathVariable Long id , @PathVariable String password ) {
+        MemoService memoService = new MemoService(jdbcTemplate);
+        return memoService.deleteMemo(id,password);
+    }
+
+    @GetMapping("/{id}")
+    public Memo findByid(@PathVariable Long id) {
+        String sql = "SELECT * FROM memo WHERE id = ?";
+
+        return jdbcTemplate.query(sql, resultSet -> {
+            if (resultSet.next()) {
+                Memo memo = new Memo();
+                memo.setTitle(resultSet.getString("title"));
+                memo.setUsername(resultSet.getString("username"));
+                memo.setContents(resultSet.getString("contents"));
+                return memo;
+            } else {
+                return null;
+            }
+        }, id);
     }
 }
