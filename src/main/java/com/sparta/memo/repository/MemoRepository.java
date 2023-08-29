@@ -90,6 +90,7 @@ public class MemoRepository {
                 memo.setTitle(resultSet.getString("title"));
                 memo.setUsername(resultSet.getString("username"));
                 memo.setContents(resultSet.getString("contents"));
+                memo.setPassword(resultSet.getString("password"));
                 return memo;
             } else {
                 return null;
